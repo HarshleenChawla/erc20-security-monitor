@@ -3,7 +3,7 @@ from web3 import Web3
 
 # ── CONFIG ──────────────────────────────────────────────
 ALCHEMY_URL   = "https://eth-mainnet.g.alchemy.com/v2/pSU5J2i4mTXevw_PfV9DQ"
-DASHBOARD_URL = "http://127.0.0.1:8080/api/alert"
+DASHBOARD_URL = "https://erc20-security-monitor-production.up.railway.app"
 THRESHOLD     = 100_000   # tokens (human-readable, NOT raw)
 START_BLOCK   = "latest"
 # ────────────────────────────────────────────────────────
