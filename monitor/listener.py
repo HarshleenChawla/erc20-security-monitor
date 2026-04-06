@@ -218,3 +218,13 @@ def start_monitor(bot_token, chat_id, rpc_url, threshold):
             time.sleep(2)
 
         time.sleep(2)
+
+import requests as _requests
+
+def _post_alert(alert_type, title, detail, block):
+    try:
+        _requests.post("http://localhost:5000/api/alert", json={
+            "type": alert_type, "title": title, "detail": detail, "block": block
+        }, timeout=2)
+    except:
+        pass
