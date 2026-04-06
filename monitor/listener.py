@@ -17,7 +17,7 @@ DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://localhost:8080")
 
 def post(alert_type, title, detail, block):
     try:
-        requests.post(f"{DASHBOARD_URL}/api/alert", json={
+        requests.post(DASHBOARD_URL, json={
             "type": alert_type, "title": title, "detail": detail, "block": block
         }, timeout=3)
     except:
