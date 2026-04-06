@@ -1,5 +1,5 @@
 import os, json
-from flask import Flask, jsonify, render_template_string
+from flask import Flask, jsonify, render_template_string, request
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -63,77 +63,46 @@ h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 0.25rem; }
   </div>
   <span class="badge">System active</span>
 </div>
-
 <div class="grid-4">
-  <div class="metric">
-    <div class="label">Tokens found</div>
-    <div class="value" id="tokensVal" style="color:#3b82f6;">0</div>
-    <div class="vsub">auto-discovered</div>
-  </div>
-  <div class="metric">
-    <div class="label">Transfers seen</div>
-    <div class="value" id="transfersVal">0</div>
-    <div class="vsub">since start</div>
-  </div>
-  <div class="metric">
-    <div class="label">Drain alerts</div>
-    <div class="value" id="drainsVal" style="color:#ef4444;">0</div>
-    <div class="vsub">large transfers</div>
-  </div>
-  <div class="metric">
-    <div class="label">Unlimited approvals</div>
-    <div class="value" id="approvalsVal" style="color:#f59e0b;">0</div>
-    <div class="vsub">MAX_UINT256</div>
-  </div>
+  <div class="metric"><div class="label">Tokens found</div><div class="value" id="t" style="color:#3b82f6;">0</div><div class="vsub">auto-discovered</div></div>
+  <div class="metric"><div class="label">Transfers seen</div><div class="value" id="tr">0</div><div class="vsub">since start</div></div>
+  <div class="metric"><div class="label">Drain alerts</div><div class="value" id="d" style="color:#ef4444;">0</div><div class="vsub">large transfers</div></div>
+  <div class="metric"><div class="label">Unlimited approvals</div><div class="value" id="a" style="color:#f59e0b;">0</div><div class="vsub">MAX_UINT256</div></div>
 </div>
-
 <div class="grid-2">
-  <div class="card">
-    <div class="card-title">Live alert feed</div>
-    <div id="alertFeed"><div class="empty">Waiting for events...</div></div>
-  </div>
-  <div class="card">
-    <div class="card-title">Telegram messages preview</div>
-    <div id="tgFeed"><div class="empty">No alerts yet...</div></div>
-  </div>
+  <div class="card"><div class="card-title">Live alert feed</div><div id="feed"><div class="empty">Waiting for events...</div></div></div>
+  <div class="card"><div class="card-title">Telegram preview</div><div id="tg"><div class="empty">No alerts yet...</div></div></div>
 </div>
-
 <script>
-const icons = {token:"N", drain:"D", approval:"!", start:"+"};
-const colors = {token:"#1e3a5f", drain:"#3b1a1a", approval:"#3b2e00", start:"#1a3b2a"};
-async function refresh() {
-  try {
-    const r = await fetch("/api/data");
-    const d = await r.json();
-    document.getElementById("tokensVal").textContent = d.stats.tokens;
-    document.getElementById("transfersVal").textContent = d.stats.transfers.toLocaleString();
-    document.getElementById("drainsVal").textContent = d.stats.drains;
-    document.getElementById("approvalsVal").textContent = d.stats.approvals;
-    const feed = document.getElementById("alertFeed");
-    const tg = document.getElementById("tgFeed");
-    if (!d.alerts.length) {
-      feed.innerHTML = "<div class='empty'>Waiting for events...</div>";
-      tg.innerHTML = "<div class='empty'>No alerts yet...</div>";
+const icons={token:"N",drain:"D",approval:"!",start:"+"};
+const colors={token:"#1e3a5f",drain:"#3b1a1a",approval:"#3b2e00",start:"#1a3b2a"};
+async function refresh(){
+  try{
+    const r=await fetch("/api/data");
+    const d=await r.json();
+    document.getElementById("t").textContent=d.stats.tokens;
+    document.getElementById("tr").textContent=d.stats.transfers.toLocaleString();
+    document.getElementById("d").textContent=d.stats.drains;
+    document.getElementById("a").textContent=d.stats.approvals;
+    const feed=document.getElementById("feed");
+    const tg=document.getElementById("tg");
+    if(!d.alerts.length){
+      feed.innerHTML="<div class='empty'>Waiting for events...</div>";
+      tg.innerHTML="<div class='empty'>No alerts yet...</div>";
       return;
     }
-    feed.innerHTML = d.alerts.slice(0,8).map(a=>`
+    feed.innerHTML=d.alerts.slice(0,8).map(a=>`
       <div class="alert-row">
         <div class="alert-icon" style="background:${colors[a.type]||'#2d3748'}">${icons[a.type]||"?"}</div>
-        <div class="alert-body">
-          <div class="alert-title">${a.title}</div>
-          <div class="alert-detail">${a.detail}</div>
-        </div>
+        <div class="alert-body"><div class="alert-title">${a.title}</div><div class="alert-detail">${a.detail}</div></div>
         <div class="alert-block">block ${a.block}</div>
       </div>`).join("");
-    tg.innerHTML = d.alerts.filter(a=>a.type!=="transfer").slice(0,4).map(a=>`
-      <div class="tg-bubble ${a.type}">
-        <strong>${a.title}</strong><br>
-        <span class="mono">${a.detail}</span>
-      </div>`).join("");
-  } catch(e) { console.log(e); }
+    tg.innerHTML=d.alerts.filter(a=>a.type!=="transfer").slice(0,4).map(a=>`
+      <div class="tg-bubble ${a.type}"><strong>${a.title}</strong><br><span class="mono">${a.detail}</span></div>`).join("");
+  }catch(e){console.log(e);}
 }
 refresh();
-setInterval(refresh, 5000);
+setInterval(refresh,5000);
 </script>
 </body>
 </html>'''
@@ -148,7 +117,6 @@ def api_data():
 
 @app.route("/api/alert", methods=["POST"])
 def add_alert():
-    from flask import request
     data = load()
     alert = request.json
     data["alerts"].insert(0, alert)
@@ -162,5 +130,6 @@ def add_alert():
     return jsonify({"ok": True})
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 8080))
+    print(f"Starting Flask on port {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
