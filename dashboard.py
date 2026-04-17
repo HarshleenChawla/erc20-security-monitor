@@ -244,7 +244,7 @@ HTML = r"""
   --bg:#f3f7fc;--surface:#ffffff;--surfaceSoft:#f4f8fc;--border:#d7e1ed;--borderStrong:#c2d1e3;
   --text:#0f172a;--textSoft:#4d6077;--textDim:#7e92aa;--blue:#0b6bcb;--blueDeep:#0f3d75;
   --blueSoft:#e8f2ff;--green:#16794b;--greenSoft:#e9f7ef;--red:#c62828;--redSoft:#feeeee;
-  --amber:#a96500;--amberSoft:#fff4dd;--purple:#5d3fd3;--shadow:0 18px 48px rgba(15,23,42,.08);
+  --amber:#a96500;--amberSoft:#fff4dd;--purple:#5d3fd3;--purpleSoft:#f1edff;--shadow:0 18px 48px rgba(15,23,42,.08);
   --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
 }
 body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--bg) 100%);color:var(--text);min-height:100vh;font-size:15px}
@@ -272,6 +272,7 @@ body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--
 .btn.soft{background:var(--surfaceSoft)}
 .btn.danger{color:var(--red);border-color:#efcaca}
 .btn.good{color:var(--green);border-color:#cde8d7;background:var(--greenSoft)}
+.btn.active-threshold{background:linear-gradient(180deg,var(--purple) 0%,#4b33b6 100%);border-color:var(--purple);color:#fff}
 .filters{display:grid;grid-template-columns:1.5fr repeat(4, minmax(120px, 1fr));gap:10px}
 @media(max-width:1100px){.filters{grid-template-columns:1fr 1fr}}
 @media(max-width:680px){.filters{grid-template-columns:1fr}}
@@ -280,6 +281,12 @@ body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--
 @media(max-width:1100px){.metrics{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){.metrics{grid-template-columns:repeat(2,1fr)}}
 .metric{padding:18px;position:relative;overflow:hidden}
+.metric:before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.metric.metric-blue:before{background:var(--blue)}
+.metric.metric-green:before{background:var(--green)}
+.metric.metric-red:before{background:var(--red)}
+.metric.metric-amber:before{background:var(--amber)}
+.metric.metric-purple:before{background:var(--purple)}
 .metric-label{font:11px var(--mono);text-transform:uppercase;color:var(--textDim);margin-bottom:10px}
 .metric-value{font-size:34px;font-weight:700}
 .metric-sub{margin-top:6px;font-size:12px;color:var(--textSoft)}
@@ -292,7 +299,12 @@ body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--
 .feed-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .feed-tab{border:1px solid var(--border);background:#fff;color:var(--textSoft);border-radius:12px;padding:8px 12px;font:700 12px var(--mono);cursor:pointer}
 .feed-tab.active{background:var(--blueDeep);border-color:var(--blueDeep);color:#fff}
-.alert{padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.alert{padding:14px 12px;border-bottom:1px solid var(--border);cursor:pointer;border-left:4px solid transparent;border-radius:12px;transition:background .15s ease,border-color .15s ease}
+.alert:hover{background:var(--surfaceSoft)}
+.alert.transfer{border-left-color:var(--blue)}
+.alert.drain{border-left-color:var(--red);background:linear-gradient(180deg,#fff 0%,#fff8f8 100%)}
+.alert.approval{border-left-color:var(--amber);background:linear-gradient(180deg,#fff 0%,#fffbf2 100%)}
+.alert.start{border-left-color:var(--green)}
 .alert:last-child{border-bottom:none}
 .alert-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:7px}
 .badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font:700 10px var(--mono);border:1px solid transparent}
@@ -303,12 +315,27 @@ body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--
 .alert-meta{font:12px var(--mono);color:var(--textDim)}
 .alert-title{font-size:15px;font-weight:700}
 .alert-detail{margin-top:6px;font-size:14px;color:var(--textSoft);line-height:1.55;word-break:break-word}
+.detail-grid{display:grid;gap:4px;margin-top:8px}
+.detail-line{font-size:12px;color:var(--textSoft);font-family:var(--mono);word-break:break-all}
+.token-chip{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:var(--purpleSoft);color:var(--purple);font:700 10px var(--mono);border:1px solid #ddd4ff;margin-top:8px}
 .stack{display:grid;gap:14px}
 .statline,.watch-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
 .statline:last-child,.watch-item:last-child{border-bottom:none}
 .small{font:12px var(--mono);color:var(--textDim)}
 .empty{padding:28px 0;text-align:center;color:var(--textDim)}
 .footer{position:fixed;bottom:0;left:0;right:0;z-index:30;background:rgba(255,255,255,.94);border-top:1px solid var(--border);padding:10px 24px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font:12px var(--mono);color:var(--textDim)}
+.mode-compact .top-info,.mode-compact .footer{font-size:11px}
+.mode-compact .metrics{grid-template-columns:repeat(3,1fr)}
+.mode-compact .metric{padding:14px}
+.mode-compact .metric-value{font-size:28px}
+.mode-compact .panel-head,.mode-compact .panel-body{padding:12px 14px}
+.mode-compact .alert{padding:10px}
+.mode-investigation .layout{grid-template-columns:1.3fr 1fr}
+.mode-investigation .panel#watchPanel{order:3}
+.mode-executive .layout{grid-template-columns:1fr}
+.mode-executive .stack{grid-template-columns:repeat(2,1fr)}
+.mode-executive #watchPanel,.mode-executive #selectedPanel{display:none}
+.mode-executive .controlbar .filters{grid-template-columns:1fr 1fr}
 </style>
 </head>
 <body>
@@ -329,7 +356,7 @@ body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--
   </div>
 </div>
 
-<div class="page">
+<div class="page mode-live" id="pageRoot">
   <div class="top-info">
     <div>Chain: <strong>Ethereum Mainnet</strong></div>
     <div>Runtime: <strong id="runtimeStatusTop">—</strong></div>
@@ -339,16 +366,16 @@ body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--
 
   <div class="surface controlbar">
     <div class="control-row">
-      <div class="seg">
-        <button class="active">Live</button>
-        <button>Investigation</button>
-        <button>Compact</button>
-        <button>Executive</button>
+      <div class="seg" id="modeTabs">
+        <button class="active" onclick="setMode('live', this)">Live</button>
+        <button onclick="setMode('investigation', this)">Investigation</button>
+        <button onclick="setMode('compact', this)">Compact</button>
+        <button onclick="setMode('executive', this)">Executive</button>
       </div>
-      <div class="action-group">
-        <button class="btn good" onclick="setThresholdPreset(100000)">Threshold 100k</button>
-        <button class="btn soft" onclick="setThresholdPreset(500000)">Threshold 500k</button>
-        <button class="btn soft" onclick="setThresholdPreset(1000000)">Threshold 1M</button>
+      <div class="action-group" id="thresholdButtons">
+        <button class="btn good threshold-btn active-threshold" onclick="setThresholdPreset(100000, this)">Threshold 100k</button>
+        <button class="btn soft threshold-btn" onclick="setThresholdPreset(500000, this)">Threshold 500k</button>
+        <button class="btn soft threshold-btn" onclick="setThresholdPreset(1000000, this)">Threshold 1M</button>
       </div>
     </div>
 
@@ -379,11 +406,11 @@ body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--
   </div>
 
   <div class="metrics">
-    <div class="metric"><div class="metric-label">Tokens Tracked</div><div class="metric-value" id="sTokens">0</div><div class="metric-sub">Unique ERC-20 contracts observed</div></div>
-    <div class="metric"><div class="metric-label">Transfers Scanned</div><div class="metric-value" id="sTransfers">0</div><div class="metric-sub">Processed transfer events</div></div>
-    <div class="metric"><div class="metric-label">Drain Alerts</div><div class="metric-value" id="sDrains">0</div><div class="metric-sub">Threshold exceeded</div></div>
-    <div class="metric"><div class="metric-label">Unlimited Approvals</div><div class="metric-value" id="sApprovals">0</div><div class="metric-sub">MAX_UINT256 approvals</div></div>
-    <div class="metric"><div class="metric-label">Priority Queue</div><div class="metric-value" id="sPriority">0</div><div class="metric-sub">Critical incidents</div></div>
+    <div class="metric metric-blue"><div class="metric-label">Tokens Tracked</div><div class="metric-value" id="sTokens">0</div><div class="metric-sub">Unique ERC-20 contracts observed</div></div>
+    <div class="metric metric-green"><div class="metric-label">Transfers Scanned</div><div class="metric-value" id="sTransfers">0</div><div class="metric-sub">Processed transfer events</div></div>
+    <div class="metric metric-red"><div class="metric-label">Drain Alerts</div><div class="metric-value" id="sDrains">0</div><div class="metric-sub">Threshold exceeded</div></div>
+    <div class="metric metric-amber"><div class="metric-label">Unlimited Approvals</div><div class="metric-value" id="sApprovals">0</div><div class="metric-sub">MAX_UINT256 approvals</div></div>
+    <div class="metric metric-purple"><div class="metric-label">Priority Queue</div><div class="metric-value" id="sPriority">0</div><div class="metric-sub">Critical incidents</div></div>
   </div>
 
   <div class="layout">
@@ -405,7 +432,7 @@ body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--
     </div>
 
     <div class="stack">
-      <div class="panel">
+      <div class="panel" id="priorityPanel">
         <div class="panel-head">
           <div class="panel-title">Priority Queue</div>
           <div class="small" id="priorityCount">0</div>
@@ -415,7 +442,7 @@ body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="watchPanel">
         <div class="panel-head">
           <div class="panel-title">Runtime Inspector</div>
         </div>
@@ -427,7 +454,7 @@ body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="selectedPanel">
         <div class="panel-head">
           <div class="panel-title">Watchlist</div>
           <button class="btn soft" onclick="clearWatch()">Clear</button>
@@ -468,9 +495,14 @@ let allAlerts = [];
 let watchlist = [];
 let feedTab = 'all';
 let selectedAlert = null;
+let currentMode = 'live';
 
 function escapeHtml(str){return (str || '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
 function short(addr){return addr && addr.length > 12 ? addr.slice(0,6) + '…' + addr.slice(-4) : (addr || '—');}
+function tokenLabel(title){
+  const match = (title || '').match(/[A-Z0-9]{2,10}/g);
+  return match && match.length ? match[0] : 'TOKEN';
+}
 function parseDetail(detail){
   detail = detail || '';
   const arrow = detail.indexOf('→');
@@ -509,8 +541,18 @@ function filteredAlerts(){
   if (sort === 'oldest') list.reverse();
   return list;
 }
-function setThresholdPreset(value){
+function setMode(mode, el){
+  currentMode = mode;
+  const root = document.getElementById('pageRoot');
+  root.classList.remove('mode-live', 'mode-investigation', 'mode-compact', 'mode-executive');
+  root.classList.add('mode-' + mode);
+  document.querySelectorAll('#modeTabs button').forEach(btn => btn.classList.remove('active'));
+  el.classList.add('active');
+}
+function setThresholdPreset(value, el){
   document.getElementById('thresholdTop').textContent = Number(value).toLocaleString();
+  document.querySelectorAll('#thresholdButtons .threshold-btn').forEach(btn => btn.classList.remove('active-threshold'));
+  if (el) el.classList.add('active-threshold');
 }
 function setFeedTab(mode, el){
   feedTab = mode;
@@ -533,8 +575,10 @@ function renderSelected(){
   box.innerHTML = `
     <div style="display:grid;gap:10px">
       <div><span class="badge ${escapeHtml(selectedAlert.type)}">${escapeHtml((selectedAlert.type || '').toUpperCase())}</span></div>
+      <div><span class="token-chip">${escapeHtml(tokenLabel(selectedAlert.title || ''))}</span></div>
       <div style="font-size:16px;font-weight:700">${escapeHtml(selectedAlert.title || 'Alert')}</div>
       <div class="statline"><span>Block</span><strong>${escapeHtml(String(selectedAlert.block || '—'))}</strong></div>
+      <div class="small">Token: ${escapeHtml(tokenLabel(selectedAlert.title || ''))}</div>
       <div class="small">From: ${escapeHtml(p.from || '—')}</div>
       <div class="small">To: ${escapeHtml(p.to || '—')}</div>
       <div class="small">Contract: ${escapeHtml(p.contract || '—')}</div>
@@ -552,14 +596,15 @@ function renderAlerts(){
     const p = parseDetail(a.detail || '');
     const watched = matchesWatch(a);
     return `
-      <div class="alert" onclick="selectAlert(${i})">
+      <div class="alert ${escapeHtml(a.type)}" onclick="selectAlert(${i})">
         <div class="alert-top">
           <span class="badge ${escapeHtml(a.type)}">${escapeHtml((a.type || '').toUpperCase())}</span>
           <span class="alert-meta">#${escapeHtml(String(a.block || '—'))}</span>
         </div>
         <div class="alert-title">${escapeHtml(a.title || 'Alert')}</div>
         <div class="alert-detail">
-          ${p.contract ? `<div><strong>From:</strong> ${escapeHtml(short(p.from))} <strong>To:</strong> ${escapeHtml(short(p.to))}</div><div><strong>Contract:</strong> ${escapeHtml(short(p.contract))}</div>` : escapeHtml(a.detail || '')}
+          <div><span class="token-chip">${escapeHtml(tokenLabel(a.title || ''))}</span></div>
+          ${p.contract ? `<div class="detail-grid"><div class="detail-line"><strong>From:</strong> ${escapeHtml(p.from || '—')}</div><div class="detail-line"><strong>To:</strong> ${escapeHtml(p.to || '—')}</div><div class="detail-line"><strong>Contract:</strong> ${escapeHtml(p.contract || '—')}</div></div>` : escapeHtml(a.detail || '')}
           ${watched ? '<div style="margin-top:6px;color:var(--blue);font-weight:700">Watched address match</div>' : ''}
         </div>
       </div>
