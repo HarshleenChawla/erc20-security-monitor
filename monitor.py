@@ -2,21 +2,22 @@ import os
 import time
 
 import requests
+from dotenv import load_dotenv
 from web3 import Web3
 
-# -- CONFIG ------------------------------------------------
-ALCHEMY_URL = "https://eth-mainnet.g.alchemy.com/v2/pSU5J2i4mTXevw_PfV9DQ"
-DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "http://127.0.0.1:8080/api/alert")
-THRESHOLD = 100_000
-START_BLOCK = "latest"
-# ----------------------------------------------------------
+load_dotenv()
 
-w3 = Web3(Web3.HTTPProvider(ALCHEMY_URL))
+RPC_URL = os.getenv("RPC_URL", "http://127.0.0.1:8545")
+DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://127.0.0.1:8080/api/alert")
+THRESHOLD = float(os.getenv("DRAIN_THRESHOLD", "100000"))
+START_BLOCK = os.getenv("START_BLOCK", "latest")
+
+w3 = Web3(Web3.HTTPProvider(RPC_URL))
 
 TRANSFER_TOPIC = w3.keccak(text="Transfer(address,address,uint256)").hex()
 APPROVAL_TOPIC = w3.keccak(text="Approval(address,address,uint256)").hex()
 MAX_UINT256 = 2**256 - 1
-decimals_cache = {}
+token_cache = {}
 
 ERC20_ABI = [
     {
@@ -37,8 +38,9 @@ ERC20_ABI = [
 
 
 def get_token_info(address):
-    if address in decimals_cache:
-        return decimals_cache[address]
+    if address in token_cache:
+        return token_cache[address]
+
     try:
         contract = w3.eth.contract(
             address=Web3.to_checksum_address(address),
@@ -46,41 +48,44 @@ def get_token_info(address):
         )
         symbol = contract.functions.symbol().call()
         decimals = contract.functions.decimals().call()
-        decimals_cache[address] = (symbol, decimals)
+        token_cache[address] = (symbol, decimals)
         return symbol, decimals
     except Exception:
-        decimals_cache[address] = ("???", 18)
+        token_cache[address] = ("???", 18)
         return "???", 18
 
 
 def post_alert(alert):
     try:
-        r = requests.post(DASHBOARD_URL, json=alert, timeout=5)
-        print(f"  ✅ {alert['title']} [{r.status_code}]")
+        response = requests.post(DASHBOARD_URL, json=alert, timeout=5)
+        if response.ok:
+            print(f"POSTED {alert['type']} | {alert['title']} [{response.status_code}]")
+        else:
+            print(f"POST FAILED {response.status_code} | {response.text[:200]}")
     except Exception as e:
-        print(f"  ❌ Failed: {e}")
-
-
-def shorten(addr):
-    return f"{addr[:6]}...{addr[-4:]}"
+        print(f"POST ERROR: {e}")
 
 
 def scan():
-    current = w3.eth.block_number if START_BLOCK == "latest" else START_BLOCK
+    if not w3.is_connected():
+        print(f"Cannot connect to RPC_URL: {RPC_URL}")
+        return
+
+    current = w3.eth.block_number if START_BLOCK == "latest" else int(START_BLOCK)
+
     print("=================================")
     print("  ERC-20 Mainnet Security Monitor")
-    print("  Auto-detecting all tokens...")
     print("=================================")
-    print(f"Auto-monitoring ALL ERC20 tokens on {ALCHEMY_URL}")
+    print(f"RPC: {RPC_URL}")
+    print(f"Dashboard: {DASHBOARD_URL}")
     print(f"Starting from block {current}")
-    print(f"Alert threshold: {THRESHOLD:,} tokens")
-    print(f"Posting alerts to: {DASHBOARD_URL}")
+    print(f"Drain threshold: {THRESHOLD:,.0f} tokens")
     print("-" * 50)
 
     post_alert({
         "type": "start",
         "title": "Monitor Started",
-        "detail": f"Scanning from block {current} · threshold {THRESHOLD:,} tokens",
+        "detail": f"Scanning from block {current} | threshold {THRESHOLD:,.0f} tokens",
         "block": current,
     })
 
@@ -88,10 +93,10 @@ def scan():
         try:
             latest = w3.eth.block_number
             if current > latest:
-                time.sleep(5)
+                time.sleep(3)
                 continue
 
-            print(f"📦 Block {current} / {latest}")
+            print(f"Scanning block {current} / {latest}")
 
             logs = w3.eth.get_logs({
                 "fromBlock": current,
@@ -120,7 +125,7 @@ def scan():
                     if amount >= THRESHOLD:
                         post_alert({
                             "type": "drain",
-                            "title": f"🚨 DRAIN: {amount:,.0f} {symbol}",
+                            "title": f"DRAIN: {amount:,.0f} {symbol}",
                             "detail": f"{from_addr} → {to_addr} | {contract}",
                             "block": current,
                         })
@@ -128,21 +133,23 @@ def scan():
                 elif topic0 == APPROVAL_TOPIC and len(log["topics"]) >= 3:
                     symbol, _ = get_token_info(contract)
                     raw_amount = int(log["data"].hex(), 16) if log["data"] else 0
+
                     if raw_amount == MAX_UINT256:
                         owner = "0x" + log["topics"][1].hex()[-40:]
                         spender = "0x" + log["topics"][2].hex()[-40:]
+
                         post_alert({
                             "type": "approval",
-                            "title": f"⚠️ Unlimited Approval: {symbol}",
+                            "title": f"Unlimited Approval: {symbol}",
                             "detail": f"{owner} → {spender} | {contract}",
                             "block": current,
                         })
 
             current += 1
-            time.sleep(0.3)
+            time.sleep(0.5)
 
         except Exception as e:
-            print(f"❌ Error on block {current}: {e}")
+            print(f"Monitor error on block {current}: {e}")
             time.sleep(3)
 
 
