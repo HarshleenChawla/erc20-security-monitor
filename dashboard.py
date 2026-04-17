@@ -241,275 +241,74 @@ HTML = r"""
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f3f7fc;
-  --bgSoft:#f8fbff;
-  --surface:#ffffff;
-  --surfaceSoft:#f4f8fc;
-  --surfaceAlt:#eef4fb;
-  --border:#d7e1ed;
-  --borderStrong:#c2d1e3;
-  --text:#0f172a;
-  --textSoft:#4d6077;
-  --textDim:#7e92aa;
-  --blue:#0b6bcb;
-  --blueDeep:#0f3d75;
-  --blueSoft:#e8f2ff;
-  --green:#16794b;
-  --greenSoft:#e9f7ef;
-  --red:#c62828;
-  --redSoft:#feeeee;
-  --amber:#a96500;
-  --amberSoft:#fff4dd;
-  --purple:#5d3fd3;
-  --purpleSoft:#f1edff;
-  --shadowLg:0 18px 48px rgba(15,23,42,.08);
-  --shadowMd:0 10px 24px rgba(15,23,42,.06);
-  --shadowSm:0 6px 14px rgba(15,23,42,.05);
-  --mono:'IBM Plex Mono',monospace;
-  --sans:'IBM Plex Sans',sans-serif;
+  --bg:#f3f7fc;--surface:#ffffff;--surfaceSoft:#f4f8fc;--border:#d7e1ed;--borderStrong:#c2d1e3;
+  --text:#0f172a;--textSoft:#4d6077;--textDim:#7e92aa;--blue:#0b6bcb;--blueDeep:#0f3d75;
+  --blueSoft:#e8f2ff;--green:#16794b;--greenSoft:#e9f7ef;--red:#c62828;--redSoft:#feeeee;
+  --amber:#a96500;--amberSoft:#fff4dd;--purple:#5d3fd3;--shadow:0 18px 48px rgba(15,23,42,.08);
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
 }
-html,body{height:100%}
-body{
-  font-family:var(--sans);
-  background:
-    radial-gradient(circle at top right, rgba(11,107,203,.06), transparent 22%),
-    linear-gradient(180deg,#f9fbff 0%,var(--bg) 100%);
-  color:var(--text);
-  min-height:100vh;
-  font-size:15px;
-}
-.header{
-  position:sticky;top:0;z-index:40;
-  display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
-  padding:18px 24px;
-  background:rgba(255,255,255,.92);
-  backdrop-filter:blur(14px);
-  border-bottom:1px solid var(--border);
-}
+body{font-family:var(--sans);background:linear-gradient(180deg,#f9fbff 0%,var(--bg) 100%);color:var(--text);min-height:100vh;font-size:15px}
+.header{position:sticky;top:0;z-index:40;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:18px 24px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
 .brand{display:flex;align-items:center;gap:14px}
-.brand-badge{
-  width:46px;height:46px;border-radius:14px;
-  display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,var(--blue),var(--blueDeep));
-  color:#fff;font-size:19px;
-  box-shadow:0 14px 28px rgba(11,107,203,.22);
-}
-.brand-title{font-size:23px;font-weight:700;letter-spacing:-.03em}
-.brand-sub{
-  margin-top:2px;
-  font:12px var(--mono);
-  color:var(--textDim);
-  text-transform:uppercase;
-  letter-spacing:.08em;
-}
+.brand-badge{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--blue),var(--blueDeep));color:#fff;font-size:19px}
+.brand-title{font-size:23px;font-weight:700}
+.brand-sub{margin-top:2px;font:12px var(--mono);color:var(--textDim);text-transform:uppercase}
 .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.pill{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:7px 12px;border-radius:999px;
-  border:1px solid var(--borderStrong);
-  background:#fff;
-  font:600 12px var(--mono);
-}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid var(--borderStrong);background:#fff;font:600 12px var(--mono)}
 .pill.live{background:var(--greenSoft);border-color:#cde8d7;color:var(--green)}
 .pill.block{background:var(--blueSoft);border-color:#d0e0f7;color:var(--blue)}
-.pulse{
-  width:8px;height:8px;border-radius:50%;background:var(--green);
-  animation:pulse 2s infinite;
-}
-@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(22,121,75,.28)}70%{opacity:.7;box-shadow:0 0 0 8px transparent}}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--green)}
 .page{padding:18px 24px 96px}
-.top-info{
-  display:flex;gap:12px;flex-wrap:wrap;
-  margin-bottom:16px;
-  font:13px var(--mono);
-  color:var(--textSoft);
-}
-.surface{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:20px;
-  box-shadow:var(--shadowLg);
-}
-.controlbar{
-  padding:16px 18px;
-  display:flex;flex-direction:column;gap:14px;
-  margin-bottom:16px;
-}
-.control-row{
-  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
-}
-.seg{
-  display:inline-flex;
-  padding:4px;
-  gap:4px;
-  border:1px solid var(--border);
-  background:var(--surfaceSoft);
-  border-radius:16px;
-}
-.seg button{
-  border:0;background:transparent;color:var(--textSoft);
-  padding:10px 14px;border-radius:12px;
-  font:600 13px var(--mono);
-  cursor:pointer;
-}
-.seg button.active{
-  background:#fff;color:var(--blueDeep);
-  box-shadow:var(--shadowSm);
-}
+.top-info{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;font:13px var(--mono);color:var(--textSoft)}
+.surface,.metric,.panel{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow)}
+.controlbar{padding:16px 18px;display:flex;flex-direction:column;gap:14px;margin-bottom:16px}
+.control-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.seg{display:inline-flex;padding:4px;gap:4px;border:1px solid var(--border);background:var(--surfaceSoft);border-radius:16px}
+.seg button{border:0;background:transparent;color:var(--textSoft);padding:10px 14px;border-radius:12px;font:600 13px var(--mono);cursor:pointer}
+.seg button.active{background:#fff;color:var(--blueDeep)}
 .action-group{display:flex;gap:8px;flex-wrap:wrap}
-.btn{
-  border:1px solid var(--borderStrong);
-  background:#fff;color:var(--text);
-  border-radius:14px;
-  padding:10px 14px;
-  font:600 13px var(--mono);
-  cursor:pointer;
-  transition:.15s ease;
-  box-shadow:0 1px 0 rgba(255,255,255,.7) inset;
-}
-.btn:hover{transform:translateY(-1px)}
+.btn{border:1px solid var(--borderStrong);background:#fff;color:var(--text);border-radius:14px;padding:10px 14px;font:600 13px var(--mono);cursor:pointer}
 .btn.primary{background:linear-gradient(180deg,var(--blue) 0%,#095cad 100%);border-color:var(--blue);color:#fff}
 .btn.soft{background:var(--surfaceSoft)}
-.btn.danger{color:var(--red);border-color:#efcaca;background:#fff}
+.btn.danger{color:var(--red);border-color:#efcaca}
 .btn.good{color:var(--green);border-color:#cde8d7;background:var(--greenSoft)}
-.filters{
-  display:grid;grid-template-columns:1.5fr repeat(4, minmax(120px, 1fr));gap:10px;
-}
+.filters{display:grid;grid-template-columns:1.5fr repeat(4, minmax(120px, 1fr));gap:10px}
 @media(max-width:1100px){.filters{grid-template-columns:1fr 1fr}}
 @media(max-width:680px){.filters{grid-template-columns:1fr}}
-.input,.select{
-  width:100%;
-  border:1px solid var(--borderStrong);
-  background:#fff;
-  color:var(--text);
-  border-radius:14px;
-  padding:12px 13px;
-  font:14px var(--mono);
-  outline:none;
-}
-.input:focus,.select:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(11,107,203,.10)}
-.metrics{
-  display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:16px;
-}
+.input,.select{width:100%;border:1px solid var(--borderStrong);background:#fff;color:var(--text);border-radius:14px;padding:12px 13px;font:14px var(--mono);outline:none}
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:16px}
 @media(max-width:1100px){.metrics{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){.metrics{grid-template-columns:repeat(2,1fr)}}
-.metric{
-  padding:18px;border-radius:18px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadowMd);position:relative;overflow:hidden;
-}
-.metric:before{
-  content:'';position:absolute;top:0;left:0;right:0;height:4px;
-}
-.metric.blue:before{background:var(--blue)}
-.metric.green:before{background:var(--green)}
-.metric.red:before{background:var(--red)}
-.metric.amber:before{background:var(--amber)}
-.metric.purple:before{background:var(--purple)}
-.metric-label{font:11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--textDim);margin-bottom:10px}
-.metric-value{font-size:34px;font-weight:700;letter-spacing:-.03em}
+.metric{padding:18px;position:relative;overflow:hidden}
+.metric-label{font:11px var(--mono);text-transform:uppercase;color:var(--textDim);margin-bottom:10px}
+.metric-value{font-size:34px;font-weight:700}
 .metric-sub{margin-top:6px;font-size:12px;color:var(--textSoft)}
-.layout{
-  display:grid;grid-template-columns:1.65fr 1fr;gap:14px;
-}
+.layout{display:grid;grid-template-columns:1.65fr 1fr;gap:14px}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}}
-.panel{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:20px;
-  box-shadow:var(--shadowLg);
-  overflow:hidden;
-}
-.panel-head{
-  padding:16px 18px;
-  border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
-  background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);
-}
-.panel-title{font-size:17px;font-weight:700;letter-spacing:-.02em}
+.panel{overflow:hidden}
+.panel-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.panel-title{font-size:17px;font-weight:700}
 .panel-body{padding:16px 18px}
 .feed-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.feed-tab{
-  border:1px solid var(--border);
-  background:#fff;color:var(--textSoft);
-  border-radius:12px;padding:8px 12px;
-  font:700 12px var(--mono);
-  cursor:pointer;
-}
+.feed-tab{border:1px solid var(--border);background:#fff;color:var(--textSoft);border-radius:12px;padding:8px 12px;font:700 12px var(--mono);cursor:pointer}
 .feed-tab.active{background:var(--blueDeep);border-color:var(--blueDeep);color:#fff}
-.alert{
-  padding:14px 0;border-bottom:1px solid var(--border);
-}
+.alert{padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer}
 .alert:last-child{border-bottom:none}
-.alert-top{
-  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:7px;
-}
-.badge{
-  display:inline-flex;align-items:center;
-  padding:4px 8px;border-radius:999px;
-  font:700 10px var(--mono);letter-spacing:.08em;
-  border:1px solid transparent;
-}
-.badge.transfer{background:var(--blueSoft);color:var(--blue);border-color:#d0e0f7}
-.badge.drain{background:var(--redSoft);color:var(--red);border-color:#f0caca}
-.badge.approval{background:var(--amberSoft);color:var(--amber);border-color:#f0ddb2}
-.badge.start{background:var(--greenSoft);color:var(--green);border-color:#cde8d7}
+.alert-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:7px}
+.badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font:700 10px var(--mono);border:1px solid transparent}
+.badge.transfer{background:var(--blueSoft);color:var(--blue)}
+.badge.drain{background:var(--redSoft);color:var(--red)}
+.badge.approval{background:var(--amberSoft);color:var(--amber)}
+.badge.start{background:var(--greenSoft);color:var(--green)}
 .alert-meta{font:12px var(--mono);color:var(--textDim)}
-.alert-title{font-size:15px;font-weight:700;line-height:1.4}
+.alert-title{font-size:15px;font-weight:700}
 .alert-detail{margin-top:6px;font-size:14px;color:var(--textSoft);line-height:1.55;word-break:break-word}
-.split{
-  display:grid;gap:14px;
-}
 .stack{display:grid;gap:14px}
-.statline{
-  display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:11px 0;border-bottom:1px solid var(--border);
-}
-.statline:last-child{border-bottom:none}
+.statline,.watch-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.statline:last-child,.watch-item:last-child{border-bottom:none}
 .small{font:12px var(--mono);color:var(--textDim)}
-.watch-item{
-  display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:10px 0;border-bottom:1px solid var(--border);
-}
-.watch-item:last-child{border-bottom:none}
-.watch-main{min-width:0}
-.watch-name{font-size:14px;font-weight:700}
-.drawer{
-  display:grid;gap:12px;
-}
-.section-label{
-  font:11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--textDim)
-}
-.toggle-row{
-  display:flex;justify-content:space-between;align-items:center;gap:12px;
-  padding:10px 0;border-bottom:1px solid var(--border);
-}
-.toggle-row:last-child{border-bottom:none}
-.toggle{
-  width:42px;height:24px;border-radius:999px;background:#d4deea;position:relative;cursor:pointer;
-}
-.toggle:after{
-  content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:var(--shadowSm);transition:.18s ease;
-}
-.toggle.on{background:var(--green)}
-.toggle.on:after{transform:translateX(18px)}
-.empty{
-  padding:28px 0;text-align:center;color:var(--textDim);
-}
-.footer{
-  position:fixed;bottom:0;left:0;right:0;z-index:30;
-  background:rgba(255,255,255,.94);backdrop-filter:blur(12px);
-  border-top:1px solid var(--border);
-  padding:10px 24px;
-  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
-  font:12px var(--mono);color:var(--textDim);
-}
-.mode-compact .metrics{grid-template-columns:repeat(3,1fr)}
-.mode-compact .stack .panel:nth-child(n+3){display:none}
-.mode-compact .controlbar{padding:12px 14px}
-.mode-executive .filters,.mode-executive .drawer,.mode-executive #watchPanel{display:none}
-.mode-executive .layout{grid-template-columns:1fr}
-.mode-executive .metrics{grid-template-columns:repeat(4,1fr)}
-.mode-investigation .layout{grid-template-columns:1.4fr 1fr}
-.mode-investigation #inspectorPanel{order:-1}
+.empty{padding:28px 0;text-align:center;color:var(--textDim)}
+.footer{position:fixed;bottom:0;left:0;right:0;z-index:30;background:rgba(255,255,255,.94);border-top:1px solid var(--border);padding:10px 24px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font:12px var(--mono);color:var(--textDim)}
 </style>
 </head>
 <body>
@@ -530,7 +329,7 @@ body{
   </div>
 </div>
 
-<div class="page" id="pageRoot">
+<div class="page">
   <div class="top-info">
     <div>Chain: <strong>Ethereum Mainnet</strong></div>
     <div>Runtime: <strong id="runtimeStatusTop">—</strong></div>
@@ -540,14 +339,13 @@ body{
 
   <div class="surface controlbar">
     <div class="control-row">
-      <div class="seg" id="modeSeg">
-        <button class="active" data-mode="live" onclick="setMode('live', this)">Live</button>
-        <button data-mode="investigation" onclick="setMode('investigation', this)">Investigation</button>
-        <button data-mode="compact" onclick="setMode('compact', this)">Compact</button>
-        <button data-mode="executive" onclick="setMode('executive', this)">Executive</button>
+      <div class="seg">
+        <button class="active">Live</button>
+        <button>Investigation</button>
+        <button>Compact</button>
+        <button>Executive</button>
       </div>
       <div class="action-group">
-        <button class="btn soft" onclick="toggleDrawer()">Advanced Options</button>
         <button class="btn good" onclick="setThresholdPreset(100000)">Threshold 100k</button>
         <button class="btn soft" onclick="setThresholdPreset(500000)">Threshold 500k</button>
         <button class="btn soft" onclick="setThresholdPreset(1000000)">Threshold 1M</button>
@@ -578,46 +376,14 @@ body{
         <option value="watched">Watched only</option>
       </select>
     </div>
-
-    <div class="drawer" id="advancedDrawer" style="display:none">
-      <div class="section-label">Advanced Controls</div>
-      <div class="filters">
-        <input class="input" id="thresholdInput" type="number" value="100000" placeholder="Drain threshold">
-        <select class="select" id="refreshMode">
-          <option>Refresh every 5s</option>
-          <option>Refresh every 10s</option>
-          <option>Refresh every 15s</option>
-        </select>
-        <select class="select" id="layoutDensity">
-          <option>Density: Comfortable</option>
-          <option>Density: Compact</option>
-        </select>
-        <select class="select" id="focusToken">
-          <option value="">Focus token: Any</option>
-        </select>
-        <select class="select" id="blockWindow">
-          <option>Window: Live</option>
-          <option>Window: Last 100 alerts</option>
-          <option>Window: Last 250 alerts</option>
-        </select>
-      </div>
-
-      <div class="section-label">Feature Toggles</div>
-      <div class="split">
-        <div class="toggle-row"><span>Show priority queue</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-        <div class="toggle-row"><span>Show runtime inspector</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-        <div class="toggle-row"><span>Highlight critical alerts</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-        <div class="toggle-row"><span>Watched wallet emphasis</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-      </div>
-    </div>
   </div>
 
   <div class="metrics">
-    <div class="metric blue"><div class="metric-label">Tokens Tracked</div><div class="metric-value" id="sTokens">0</div><div class="metric-sub">Unique ERC-20 contracts observed</div></div>
-    <div class="metric green"><div class="metric-label">Transfers Scanned</div><div class="metric-value" id="sTransfers">0</div><div class="metric-sub">Processed transfer events</div></div>
-    <div class="metric red"><div class="metric-label">Drain Alerts</div><div class="metric-value" id="sDrains">0</div><div class="metric-sub">Threshold exceeded</div></div>
-    <div class="metric amber"><div class="metric-label">Unlimited Approvals</div><div class="metric-value" id="sApprovals">0</div><div class="metric-sub">MAX_UINT256 approvals</div></div>
-    <div class="metric purple"><div class="metric-label">Priority Queue</div><div class="metric-value" id="sPriority">0</div><div class="metric-sub">Critical incidents requiring attention</div></div>
+    <div class="metric"><div class="metric-label">Tokens Tracked</div><div class="metric-value" id="sTokens">0</div><div class="metric-sub">Unique ERC-20 contracts observed</div></div>
+    <div class="metric"><div class="metric-label">Transfers Scanned</div><div class="metric-value" id="sTransfers">0</div><div class="metric-sub">Processed transfer events</div></div>
+    <div class="metric"><div class="metric-label">Drain Alerts</div><div class="metric-value" id="sDrains">0</div><div class="metric-sub">Threshold exceeded</div></div>
+    <div class="metric"><div class="metric-label">Unlimited Approvals</div><div class="metric-value" id="sApprovals">0</div><div class="metric-sub">MAX_UINT256 approvals</div></div>
+    <div class="metric"><div class="metric-label">Priority Queue</div><div class="metric-value" id="sPriority">0</div><div class="metric-sub">Critical incidents</div></div>
   </div>
 
   <div class="layout">
@@ -639,7 +405,7 @@ body{
     </div>
 
     <div class="stack">
-      <div class="panel" id="priorityPanel">
+      <div class="panel">
         <div class="panel-head">
           <div class="panel-title">Priority Queue</div>
           <div class="small" id="priorityCount">0</div>
@@ -649,10 +415,9 @@ body{
         </div>
       </div>
 
-      <div class="panel" id="inspectorPanel">
+      <div class="panel">
         <div class="panel-head">
           <div class="panel-title">Runtime Inspector</div>
-          <div class="small">Live</div>
         </div>
         <div class="panel-body">
           <div class="statline"><span>Status</span><strong id="runtimeStatus">—</strong></div>
@@ -662,7 +427,7 @@ body{
         </div>
       </div>
 
-      <div class="panel" id="watchPanel">
+      <div class="panel">
         <div class="panel-head">
           <div class="panel-title">Watchlist</div>
           <button class="btn soft" onclick="clearWatch()">Clear</button>
@@ -684,10 +449,9 @@ body{
       <div class="panel">
         <div class="panel-head">
           <div class="panel-title">Selected Alert</div>
-          <div class="small">Inspector</div>
         </div>
         <div class="panel-body" id="selectedAlert">
-          <div class="empty">Select or search alerts to inspect activity context</div>
+          <div class="empty">Select an alert to inspect details</div>
         </div>
       </div>
     </div>
@@ -703,15 +467,10 @@ body{
 let allAlerts = [];
 let watchlist = [];
 let feedTab = 'all';
-let currentMode = 'live';
 let selectedAlert = null;
 
-function escapeHtml(str){
-  return (str || '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-}
-function short(addr){
-  return addr && addr.length > 12 ? addr.slice(0,6) + '…' + addr.slice(-4) : (addr || '—');
-}
+function escapeHtml(str){return (str || '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
+function short(addr){return addr && addr.length > 12 ? addr.slice(0,6) + '…' + addr.slice(-4) : (addr || '—');}
 function parseDetail(detail){
   detail = detail || '';
   const arrow = detail.indexOf('→');
@@ -724,7 +483,6 @@ function parseDetail(detail){
 function severityFor(alert){
   if (alert.type === 'drain') return 'critical';
   if (alert.type === 'approval') return 'high';
-  if (alert.type === 'transfer') return 'info';
   return 'info';
 }
 function matchesWatch(alert){
@@ -739,49 +497,26 @@ function filteredAlerts(){
   const type = document.getElementById('typeFilter')?.value || 'all';
   const sort = document.getElementById('sortFilter')?.value || 'newest';
   const watchOnly = document.getElementById('watchOnlyFilter')?.value || 'all';
-  const focusToken = document.getElementById('focusToken')?.value || '';
 
   let list = [...allAlerts];
-
   if (feedTab !== 'all') list = list.filter(a => a.type === feedTab);
   if (type !== 'all') list = list.filter(a => a.type === type);
-
   if (severity === 'critical') list = list.filter(a => severityFor(a) === 'critical');
   if (severity === 'high') list = list.filter(a => ['critical','high'].includes(severityFor(a)));
   if (severity === 'info') list = list.filter(a => severityFor(a) === 'info');
-
   if (watchOnly === 'watched') list = list.filter(matchesWatch);
-
-  if (focusToken) list = list.filter(a => (a.title || '').toLowerCase().includes(focusToken.toLowerCase()));
-
-  if (search) {
-    list = list.filter(a => ((a.title || '') + ' ' + (a.detail || '')).toLowerCase().includes(search));
-  }
-
+  if (search) list = list.filter(a => ((a.title || '') + ' ' + (a.detail || '')).toLowerCase().includes(search));
   if (sort === 'oldest') list.reverse();
   return list;
 }
-function setMode(mode, el){
-  currentMode = mode;
-  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  const root = document.getElementById('pageRoot');
-  root.classList.remove('mode-live','mode-investigation','mode-compact','mode-executive');
-  root.classList.add('mode-' + mode);
+function setThresholdPreset(value){
+  document.getElementById('thresholdTop').textContent = Number(value).toLocaleString();
 }
 function setFeedTab(mode, el){
   feedTab = mode;
   document.querySelectorAll('.feed-tab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   renderAll();
-}
-function toggleDrawer(){
-  const el = document.getElementById('advancedDrawer');
-  el.style.display = el.style.display === 'none' ? 'grid' : 'none';
-}
-function setThresholdPreset(value){
-  document.getElementById('thresholdInput').value = value;
-  document.getElementById('thresholdTop').textContent = Number(value).toLocaleString();
 }
 function selectAlert(index){
   const list = filteredAlerts();
@@ -791,17 +526,15 @@ function selectAlert(index){
 function renderSelected(){
   const box = document.getElementById('selectedAlert');
   if (!selectedAlert){
-    box.innerHTML = '<div class="empty">Select or search alerts to inspect activity context</div>';
+    box.innerHTML = '<div class="empty">Select an alert to inspect details</div>';
     return;
   }
   const p = parseDetail(selectedAlert.detail || '');
   box.innerHTML = `
-    <div class="drawer">
+    <div style="display:grid;gap:10px">
       <div><span class="badge ${escapeHtml(selectedAlert.type)}">${escapeHtml((selectedAlert.type || '').toUpperCase())}</span></div>
       <div style="font-size:16px;font-weight:700">${escapeHtml(selectedAlert.title || 'Alert')}</div>
       <div class="statline"><span>Block</span><strong>${escapeHtml(String(selectedAlert.block || '—'))}</strong></div>
-      <div class="statline"><span>Severity</span><strong>${escapeHtml(severityFor(selectedAlert).toUpperCase())}</strong></div>
-      <div class="section-label">Addresses</div>
       <div class="small">From: ${escapeHtml(p.from || '—')}</div>
       <div class="small">To: ${escapeHtml(p.to || '—')}</div>
       <div class="small">Contract: ${escapeHtml(p.contract || '—')}</div>
@@ -811,26 +544,22 @@ function renderSelected(){
 function renderAlerts(){
   const list = filteredAlerts();
   document.getElementById('feedCount').textContent = list.length + ' events';
-
   if (!list.length){
     document.getElementById('alertList').innerHTML = '<div class="empty">No alerts match the current filters</div>';
     return;
   }
-
   document.getElementById('alertList').innerHTML = list.slice(0, 120).map((a, i) => {
     const p = parseDetail(a.detail || '');
     const watched = matchesWatch(a);
     return `
-      <div class="alert" onclick="selectAlert(${i})" style="cursor:pointer;${watched ? 'background:linear-gradient(180deg,#fbfdff 0%,#f3f8ff 100%);padding-left:8px;padding-right:8px;border-radius:12px;' : ''}">
+      <div class="alert" onclick="selectAlert(${i})">
         <div class="alert-top">
           <span class="badge ${escapeHtml(a.type)}">${escapeHtml((a.type || '').toUpperCase())}</span>
           <span class="alert-meta">#${escapeHtml(String(a.block || '—'))}</span>
         </div>
         <div class="alert-title">${escapeHtml(a.title || 'Alert')}</div>
         <div class="alert-detail">
-          ${p.contract
-            ? `<div><strong>From:</strong> ${escapeHtml(short(p.from))} <strong>To:</strong> ${escapeHtml(short(p.to))}</div><div><strong>Contract:</strong> ${escapeHtml(short(p.contract))}</div>`
-            : escapeHtml(a.detail || '')}
+          ${p.contract ? `<div><strong>From:</strong> ${escapeHtml(short(p.from))} <strong>To:</strong> ${escapeHtml(short(p.to))}</div><div><strong>Contract:</strong> ${escapeHtml(short(p.contract))}</div>` : escapeHtml(a.detail || '')}
           ${watched ? '<div style="margin-top:6px;color:var(--blue);font-weight:700">Watched address match</div>' : ''}
         </div>
       </div>
@@ -841,12 +570,10 @@ function renderPriority(){
   const priority = allAlerts.filter(a => ['drain','approval'].includes(a.type));
   document.getElementById('priorityCount').textContent = priority.length;
   document.getElementById('sPriority').textContent = priority.length.toLocaleString();
-
   if (!priority.length){
     document.getElementById('priorityList').innerHTML = '<div class="empty">No critical alerts</div>';
     return;
   }
-
   document.getElementById('priorityList').innerHTML = priority.slice(0, 8).map(a => `
     <div class="statline">
       <div>
@@ -857,17 +584,6 @@ function renderPriority(){
     </div>
   `).join('');
 }
-function refreshFocusTokenOptions(){
-  const sel = document.getElementById('focusToken');
-  const current = sel.value;
-  const tokens = [...new Set(allAlerts.map(a => {
-    const m = (a.title || '').match(/([A-Z0-9]{2,10})/);
-    return m ? m[1] : '';
-  }).filter(Boolean))].slice(0, 50);
-
-  sel.innerHTML = '<option value="">Focus token: Any</option>' + tokens.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
-  sel.value = current;
-}
 function renderWatch(){
   const box = document.getElementById('watchList');
   if (!watchlist.length){
@@ -876,8 +592,8 @@ function renderWatch(){
   }
   box.innerHTML = watchlist.map((w, i) => `
     <div class="watch-item">
-      <div class="watch-main">
-        <div class="watch-name">${escapeHtml(w.label)}</div>
+      <div>
+        <div style="font-size:14px;font-weight:700">${escapeHtml(w.label)}</div>
         <div class="small">${escapeHtml(short(w.addr))}</div>
       </div>
       <button class="btn soft" onclick="removeWatch(${i})">Remove</button>
@@ -894,19 +610,9 @@ function addWatch(){
   document.getElementById('watchInput').value = '';
   renderAll();
 }
-function removeWatch(i){
-  watchlist.splice(i, 1);
-  renderAll();
-}
-function clearWatch(){
-  watchlist = [];
-  renderAll();
-}
-function pasteAddr(){
-  navigator.clipboard.readText().then(t => {
-    document.getElementById('watchInput').value = t.trim();
-  }).catch(() => {});
-}
+function removeWatch(i){watchlist.splice(i, 1);renderAll();}
+function clearWatch(){watchlist = [];renderAll();}
+function pasteAddr(){navigator.clipboard.readText().then(t => {document.getElementById('watchInput').value = t.trim();}).catch(() => {});}
 async function clearAlerts(){
   if (!confirm('Clear all alerts?')) return;
   await fetch('/api/clear', { method: 'POST' });
@@ -920,12 +626,7 @@ function exportAlerts(){
   a.download = 'erc20-alerts.json';
   a.click();
 }
-function renderAll(){
-  renderAlerts();
-  renderPriority();
-  renderWatch();
-  renderSelected();
-}
+function renderAll(){renderAlerts();renderPriority();renderWatch();renderSelected();}
 async function refreshNow(){
   try{
     const res = await fetch('/api/data');
@@ -938,7 +639,6 @@ async function refreshNow(){
     document.getElementById('sTransfers').textContent = (stats.transfers || 0).toLocaleString();
     document.getElementById('sDrains').textContent = (stats.drains || 0).toLocaleString();
     document.getElementById('sApprovals').textContent = (stats.approvals || 0).toLocaleString();
-
     document.getElementById('blockPill').textContent = 'Block ' + (meta.latest_block ?? '—');
     document.getElementById('runtimeBlock').textContent = meta.latest_block ?? '—';
     document.getElementById('runtimeStatus').textContent = meta.status || '—';
@@ -950,11 +650,8 @@ async function refreshNow(){
     document.getElementById('runtimeSync').textContent = now;
     document.getElementById('footerTime').textContent = 'Last sync: ' + now;
 
-    refreshFocusTokenOptions();
     renderAll();
-  }catch(e){
-    console.log(e);
-  }
+  }catch(e){console.log(e);}
 }
 refreshNow();
 setInterval(refreshNow, 5000);
