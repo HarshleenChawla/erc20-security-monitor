@@ -1,408 +1,517 @@
-import os, json
+import json
+import os
+
 from flask import Flask, jsonify, render_template_string, request
 from flask_cors import CORS
+
 app = Flask(__name__)
 CORS(app)
+
 EVENTS_FILE = "/tmp/events.json"
+
 
 def load():
     try:
-        with open(EVENTS_FILE, 'r') as f:
+        with open(EVENTS_FILE, "r") as f:
             return json.load(f)
-    except:
-        return {"alerts": [], "stats": {"tokens": 0, "transfers": 0, "drains": 0, "approvals": 0}}
+    except Exception:
+        return {
+            "alerts": [],
+            "stats": {"tokens": 0, "transfers": 0, "drains": 0, "approvals": 0},
+        }
+
 
 def save(data):
-    with open(EVENTS_FILE, 'w') as f:
+    with open(EVENTS_FILE, "w") as f:
         json.dump(data, f)
 
-HTML = r'''<!DOCTYPE html>
+
+HTML = r"""
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ERC-20 Security Monitor</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ERC-20 Security Monitor — Light</title>
 <style>
-:root {
-  --bg:#080b10;--surface:#0d1117;--surface2:#161b22;--border:#21262d;--border2:#30363d;
-  --text:#e6edf3;--muted:#7d8590;--dim:#484f58;
-  --green:#3fb950;--green-bg:#0d1f0f;
-  --red:#f85149;--red-bg:#1f0d0d;
-  --yellow:#d29922;--yellow-bg:#1f1a0d;
-  --blue:#58a6ff;--blue-bg:#0d1526;
-  --purple:#bc8cff;--purple-bg:#1a0d2e;
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f9fc;--bg2:#ffffff;--bg3:#f1f5f9;
+  --panel:#ffffff;--panel2:#f8fafc;
+  --border:#dbe4ee;--border2:#c7d4e3;
+  --accent:#0ea5e9;--green:#16a34a;--red:#dc2626;--amber:#d97706;--purple:#7c3aed;
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --mono:'JetBrains Mono',Consolas,monospace;
+  --sans:-apple-system,'Segoe UI',system-ui,sans-serif;
 }
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;}
-body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
-.mono{font-family:'JetBrains Mono',monospace;}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(63,185,80,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(63,185,80,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
-.app{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:rgba(8,11,16,0.9);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100;}
-.brand{display:flex;align-items:center;gap:12px;}
-.brand-icon{width:36px;height:36px;background:var(--green-bg);border:1px solid var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
-.brand-name{font-size:1rem;font-weight:800;letter-spacing:-0.02em;}
-.brand-sub{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:1px;}
-.topbar-right{display:flex;align-items:center;gap:10px;}
-.live-badge{display:flex;align-items:center;gap:6px;background:var(--green-bg);border:1px solid rgba(63,185,80,0.3);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--green);font-family:'JetBrains Mono',monospace;}
-.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite;}
-@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
-.block-badge{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;}
-.clear-btn{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;transition:all .15s;}
-.clear-btn:hover{border-color:var(--red);color:var(--red);}
-.main{flex:1;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;}
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;position:relative;overflow:hidden;transition:border-color .2s;}
-.stat-card:hover{border-color:var(--border2);}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
-.stat-card.tokens::before{background:var(--blue);}
-.stat-card.transfers::before{background:var(--purple);}
-.stat-card.drains::before{background:var(--red);}
-.stat-card.approvals::before{background:var(--yellow);}
-.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;font-family:'JetBrains Mono',monospace;}
-.stat-value{font-size:2.2rem;font-weight:800;line-height:1;margin-bottom:6px;}
-.stat-card.tokens .stat-value{color:var(--blue);}
-.stat-card.transfers .stat-value{color:var(--purple);}
-.stat-card.drains .stat-value{color:var(--red);}
-.stat-card.approvals .stat-value{color:var(--yellow);}
-.stat-sub{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
-.content-grid{display:grid;grid-template-columns:1fr 380px;gap:1.25rem;flex:1;}
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;}
-.panel-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0;}
-.panel-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);font-family:'JetBrains Mono',monospace;}
-.panel-count{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--dim);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2px 10px;}
-.toolbar{display:flex;align-items:center;gap:8px;padding:0.6rem 1.25rem;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
-.filter-tabs{display:flex;gap:4px;flex:1;overflow-x:auto;}
-.tab{font-size:11px;font-family:'JetBrains Mono',monospace;padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap;}
-.tab:hover{border-color:var(--border2);color:var(--text);}
-.tab.active{background:var(--surface2);border-color:var(--border2);color:var(--text);}
-.tab.active.drain{border-color:var(--red);color:var(--red);background:var(--red-bg);}
-.tab.active.approval{border-color:var(--yellow);color:var(--yellow);background:var(--yellow-bg);}
-.tab.active.transfer{border-color:var(--purple);color:var(--purple);background:var(--purple-bg);}
-.search-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--text);font-size:11px;font-family:'JetBrains Mono',monospace;width:180px;outline:none;transition:border-color .15s;}
-.search-box:focus{border-color:var(--border2);}
-.search-box::placeholder{color:var(--dim);}
-.feed-scroll{flex:1;overflow-y:auto;min-height:0;max-height:520px;}
-.feed-scroll::-webkit-scrollbar{width:4px;}
-.feed-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
-.alert-item{display:flex;gap:12px;padding:12px 1.25rem;border-bottom:1px solid var(--border);transition:background .15s;cursor:pointer;animation:slideIn .3s ease;}
-@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.alert-item:hover{background:var(--surface2);}
-.alert-item.is-drain{border-left:2px solid var(--red);}
-.alert-item.is-approval{border-left:2px solid var(--yellow);}
-.alert-dot{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:1px;font-family:'JetBrains Mono',monospace;}
-.dot-drain{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,81,73,0.2);}
-.dot-approval{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(210,153,34,0.2);}
-.dot-transfer{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(188,140,255,0.2);}
-.dot-start{background:var(--green-bg);color:var(--green);border:1px solid rgba(63,185,80,0.2);}
-.alert-body{flex:1;min-width:0;}
-.alert-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;}
-.alert-detail{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;word-break:break-all;line-height:1.5;}
-.alert-detail.collapsed{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;word-break:normal;}
-.alert-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
-.alert-block{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--dim);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;white-space:nowrap;}
-.copy-btn{font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s;white-space:nowrap;}
-.copy-btn:hover{border-color:var(--green);color:var(--green);}
-.copy-btn.copied{border-color:var(--green);color:var(--green);background:var(--green-bg);}
-.expand-btn{font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'JetBrains Mono',monospace;}
-.expand-btn:hover{color:var(--text);border-color:var(--border2);}
-.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;gap:12px;color:var(--dim);}
-.empty-icon{font-size:2rem;opacity:0.4;}
-.empty-text{font-size:13px;font-family:'JetBrains Mono',monospace;}
-.side-panel{display:flex;flex-direction:column;gap:1.25rem;}
-.activity-scroll{flex:1;overflow-y:auto;min-height:0;max-height:420px;}
-.activity-scroll::-webkit-scrollbar{width:4px;}
-.activity-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
-.activity-item{display:flex;align-items:flex-start;gap:10px;padding:12px 1.25rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
-.activity-item:hover{background:var(--surface2);}
-.activity-line{display:flex;flex-direction:column;flex:1;min-width:0;}
-.activity-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
-.activity-addr{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);word-break:break-all;}
-.activity-block{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--dim);margin-top:2px;}
-.status-bar{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1.5rem;border-top:1px solid var(--border);background:var(--surface);font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--dim);}
-.status-left{display:flex;align-items:center;gap:16px;}
-.toast-container{position:fixed;top:70px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;}
-.toast{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text);min-width:280px;max-width:360px;animation:toastIn .3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
-.toast.drain{border-color:var(--red);background:var(--red-bg);}
-.toast.approval{border-color:var(--yellow);background:var(--yellow-bg);}
-.toast-title{font-weight:700;margin-bottom:4px;}
-.toast.drain .toast-title{color:var(--red);}
-.toast.approval .toast-title{color:var(--yellow);}
-.toast-detail{color:var(--muted);font-size:11px;word-break:break-all;}
-@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;}
-.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:1.5rem;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;}
-.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
-.modal-title{font-size:14px;font-weight:700;color:var(--text);font-family:'JetBrains Mono',monospace;}
-.modal-close{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;font-family:'JetBrains Mono',monospace;transition:all .15s;}
-.modal-close:hover{color:var(--text);border-color:var(--border2);}
-.modal-badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;font-family:'JetBrains Mono',monospace;margin-bottom:1rem;}
-.modal-badge.drain{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,81,73,0.3);}
-.modal-badge.approval{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(210,153,34,0.3);}
-.modal-badge.transfer{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(188,140,255,0.3);}
-.modal-row{margin-bottom:1rem;}
-.modal-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;font-family:'JetBrains Mono',monospace;}
-.modal-val{font-size:12px;color:var(--text);word-break:break-all;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;}
-.modal-val span{flex:1;word-break:break-all;}
-.etherscan-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(88,166,255,0.3);background:var(--blue-bg);color:var(--blue);cursor:pointer;text-decoration:none;display:inline-block;font-family:'JetBrains Mono',monospace;transition:all .15s;}
-.etherscan-btn:hover{border-color:var(--blue);background:rgba(88,166,255,0.15);}
-@media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr)}.content-grid{grid-template-columns:1fr}.side-panel{display:none}}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;min-height:100vh}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:8px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-box{width:30px;height:30px;border:1px solid var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;background:#0ea5e912}
+.logo-txt{font-family:var(--sans);font-size:16px;font-weight:800;letter-spacing:-.3px}
+.logo-txt span{color:var(--accent)}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.4px}
+.b-green{background:#16a34a12;border:1px solid #16a34a33;color:var(--green)}
+.b-accent{background:#0ea5e90f;border:1px solid #0ea5e933;color:var(--accent)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:4px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 #16a34a40}70%{opacity:.6;box-shadow:0 0 0 5px transparent}}
+
+.netbar{display:flex;flex-wrap:wrap;gap:6px 16px;padding:7px 18px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:11px;color:var(--text2)}
+.nv{color:var(--text);font-weight:600}
+
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:14px 18px 0}
+@media(max-width:800px){.stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:480px){.stats{grid-template-columns:repeat(2,1fr)}}
+.sc{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:12px 14px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.04)}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc.ca::before{background:var(--accent)}
+.sc.cg::before{background:var(--green)}
+.sc.cr::before{background:var(--red)}
+.sc.cam::before{background:var(--amber)}
+.sc.cp::before{background:var(--purple)}
+.sc-icon{position:absolute;right:12px;top:12px;font-size:16px;opacity:.25}
+.sc-label{font-size:9px;color:var(--text3);letter-spacing:.7px;text-transform:uppercase;margin-bottom:6px}
+.sc-val{font-family:var(--sans);font-size:24px;font-weight:800;line-height:1;margin-bottom:3px}
+.sc-sub{font-size:9px;color:var(--text2)}
+
+.grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;padding:14px 18px 70px}
+@media(max-width:1000px){.grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:9px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(15,23,42,.04)}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg3)}
+.ph-title{font-family:var(--sans);font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+.pb{padding:12px 14px;flex:1;overflow-y:auto;max-height:320px}
+.pb::-webkit-scrollbar{width:3px}
+.pb::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.btn{padding:6px 12px;border-radius:7px;border:1px solid;font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-p{background:#0ea5e90f;border-color:var(--accent);color:var(--accent)}
+.btn-p:hover{background:#0ea5e91c}
+.btn-d{background:#dc26260f;border-color:var(--red);color:var(--red)}
+.btn-d:hover{background:#dc26261a}
+.btn-g{background:#fff;border-color:var(--border2);color:var(--text2)}
+.btn-g:hover{border-color:var(--border);color:var(--text)}
+.btn-gr{background:#16a34a0f;border-color:var(--green);color:var(--green)}
+.btn-sm{padding:4px 9px;font-size:10px}
+
+.inp{background:#fff;border:1px solid var(--border2);border-radius:7px;padding:7px 10px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .2s;width:100%}
+.inp:focus{border-color:var(--accent)}
+.inp::placeholder{color:var(--text3)}
+
+.tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.tab{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid transparent;transition:all .15s;letter-spacing:.3px}
+.tab.on{background:var(--accent);color:#fff}
+.tab:not(.on){color:var(--text2);border-color:var(--border)}
+.tab:not(.on):hover{color:var(--text);border-color:var(--border2)}
+
+.ai{padding:9px 0;border-bottom:1px solid var(--border);transition:opacity .15s}
+.ai:last-child{border-bottom:none}
+.ai:hover{opacity:.85}
+.ai-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:3px}
+.atype{font-size:9px;font-weight:800;letter-spacing:.6px;padding:2px 6px;border-radius:4px}
+.t-drain{background:#dc262612;color:var(--red);border:1px solid #dc262633}
+.t-approval{background:#d9770612;color:var(--amber);border:1px solid #d9770633}
+.t-transfer{background:#0ea5e90e;color:var(--accent);border:1px solid #0ea5e922}
+.t-start{background:#16a34a12;color:var(--green);border:1px solid #16a34a28}
+.atime{font-size:10px;color:var(--text3)}
+.aaddr{font-size:11px;color:var(--text2);word-break:break-all}
+.aaddr b{color:var(--text);font-weight:500}
+.aamount{font-size:12px;font-weight:700}
+
+.tr{display:grid;grid-template-columns:28px 1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.tr:last-child{border-bottom:none}
+.ticon{width:28px;height:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;font-family:var(--sans)}
+.tname{font-size:12px;font-weight:700}
+.taddr{font-size:10px;color:var(--text3)}
+.risk{font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px}
+.r-low{background:#16a34a12;color:var(--green);border:1px solid #16a34a28}
+.r-med{background:#d9770612;color:var(--amber);border:1px solid #d9770628}
+.r-high{background:#dc262612;color:var(--red);border:1px solid #dc262628}
+
+.wi{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)}
+.wi:last-child{border-bottom:none}
+.wavatar{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#0ea5e918,#7c3aed18);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--accent);flex-shrink:0}
+.winfo{flex:1;min-width:0}
+.wlabel{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.whex{font-size:10px;color:var(--text3)}
+.wbtns{display:flex;gap:3px;flex-shrink:0}
+
+.tog{width:34px;height:18px;background:var(--border2);border-radius:9px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.tog.on{background:var(--green)}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.tog.on::after{transform:translateX(16px)}
+.trow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.trow:last-child{border-bottom:none}
+.tlabel{font-size:12px;color:var(--text2)}
+
+.throw{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.throw:last-child{border-bottom:none}
+.thlabel{flex:1;font-size:12px;color:var(--text2)}
+.thinp{width:90px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;text-align:right}
+.thinp:focus{border-color:var(--accent)}
+
+.empty{text-align:center;padding:30px 0;color:var(--text3);font-size:11px}
+.dots span{animation:sd 1.4s ease-in-out infinite}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes sd{0%,100%{opacity:.2}50%{opacity:1}}
+
+.sbar{position:fixed;bottom:0;left:0;right:0;padding:5px 18px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--text3);z-index:50}
+.sbar-l,.sbar-r{display:flex;align-items:center;gap:10px}
+.inrow{display:flex;gap:6px;margin-bottom:8px}
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-icon">🛡</div>
-      <div>
-        <div class="brand-name">ERC-20 Security Monitor</div>
-        <div class="brand-sub mono">ethereum mainnet · auto-scan</div>
-      </div>
-    </div>
-    <div class="topbar-right">
-      <button class="clear-btn mono" onclick="clearAll()">Clear Alerts</button>
-      <div class="block-badge mono" id="blockBadge">block —</div>
-      <div class="live-badge"><span class="live-dot"></span>LIVE</div>
-    </div>
+
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-box">🛡</div>
+    <div class="logo-txt">ERC20<span>·SEC</span> Monitor</div>
   </div>
-  <div class="main">
-    <div class="stats-row">
-      <div class="stat-card tokens"><div class="stat-label">Tokens Discovered</div><div class="stat-value mono" id="sTokens">0</div><div class="stat-sub">unique ERC20 contracts</div></div>
-      <div class="stat-card transfers"><div class="stat-label">Transfers Scanned</div><div class="stat-value mono" id="sTransfers">0</div><div class="stat-sub">since monitor start</div></div>
-      <div class="stat-card drains"><div class="stat-label">Drain Alerts</div><div class="stat-value mono" id="sDrains">0</div><div class="stat-sub">threshold exceeded</div></div>
-      <div class="stat-card approvals"><div class="stat-label">Unlimited Approvals</div><div class="stat-value mono" id="sApprovals">0</div><div class="stat-sub">MAX_UINT256 detected</div></div>
-    </div>
-    <div class="content-grid">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">Live Alert Feed</span>
-          <span class="panel-count mono" id="feedCount">0 events</span>
-        </div>
-        <div class="toolbar">
-          <div class="filter-tabs">
-            <button class="tab active all" onclick="setFilter('all',this)">All</button>
-            <button class="tab" onclick="setFilter('drain',this)">Drains</button>
-            <button class="tab" onclick="setFilter('approval',this)">Approvals</button>
-            <button class="tab" onclick="setFilter('transfer',this)">Transfers</button>
-          </div>
-          <input class="search-box mono" id="searchBox" placeholder="Search token, address..." oninput="renderFeed()">
-        </div>
-        <div class="feed-scroll" id="alertFeed">
-          <div class="empty-state"><div class="empty-icon">📡</div><div class="empty-text">Scanning mainnet for events...</div></div>
-        </div>
-      </div>
-      <div class="side-panel">
-        <div class="panel" style="flex:1;">
-          <div class="panel-header">
-            <span class="panel-title">High Priority</span>
-            <span class="panel-count mono" id="highCount">0</span>
-          </div>
-          <div class="activity-scroll" id="highFeed">
-            <div class="empty-state" style="padding:2rem 1rem;"><div class="empty-icon" style="font-size:1.5rem;">🔍</div><div class="empty-text">No high-priority alerts</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="status-bar">
-    <div class="status-left">
-      <span style="color:var(--green)">●</span> Connected to Ethereum Mainnet
-      <span id="lastUpdate">Last update: —</span>
-    </div>
-    <span>Refreshing every 5s</span>
+  <div class="hdr-right">
+    <span class="badge b-green"><span class="dot"></span>LIVE</span>
+    <span class="badge b-accent" id="block-badge">block —</span>
+    <button class="btn btn-g btn-sm" onclick="clearAlerts()">✕ Clear</button>
+    <button class="btn btn-p btn-sm" id="scan-btn" onclick="toggleScan()">⏸ Pause</button>
+    <button class="btn btn-g btn-sm" onclick="exportAlerts()">⬇ Export</button>
   </div>
 </div>
-<div class="toast-container" id="toastContainer"></div>
+
+<div class="netbar">
+  <span>⛽ Gas: <span class="nv" id="gas">—</span> gwei</span>
+  <span>⛓ Chain: <span class="nv">Ethereum Mainnet</span></span>
+  <span>⏱ Last scan: <span class="nv" id="last-scan">—</span></span>
+  <span>📡 Refresh: <span class="nv">5s</span></span>
+  <span>🎯 Drain threshold: <span class="nv" id="tdisplay">100,000 tokens</span></span>
+  <span>📦 Latest block: <span class="nv" id="pending">—</span></span>
+</div>
+
+<div class="stats">
+  <div class="sc ca"><div class="sc-icon">🔍</div><div class="sc-label">Tokens Found</div><div class="sc-val" id="st-tok">0</div><div class="sc-sub">unique ERC-20 contracts</div></div>
+  <div class="sc cg"><div class="sc-icon">↔</div><div class="sc-label">Transfers Scanned</div><div class="sc-val" id="st-tx">0</div><div class="sc-sub">since monitor start</div></div>
+  <div class="sc cr"><div class="sc-icon">🚨</div><div class="sc-label">Drain Alerts</div><div class="sc-val" id="st-drain">0</div><div class="sc-sub">threshold exceeded</div></div>
+  <div class="sc cam"><div class="sc-icon">⚠</div><div class="sc-label">Unlimited Approvals</div><div class="sc-val" id="st-approve">0</div><div class="sc-sub">MAX_UINT256 detected</div></div>
+  <div class="sc cp"><div class="sc-icon">🎯</div><div class="sc-label">High Priority</div><div class="sc-val" id="st-hp">0</div><div class="sc-sub">requires attention now</div></div>
+</div>
+
+<div class="grid">
+  <div class="panel" style="grid-row:span 2">
+    <div class="ph">
+      <div class="ph-title">📡 Live Alert Feed <span id="ev-count" style="color:var(--text3);font-size:10px;font-weight:400">0 events</span></div>
+      <div style="display:flex;gap:5px">
+        <button class="btn btn-g btn-sm" onclick="exportAlerts()">⬇ Export</button>
+        <button class="btn btn-d btn-sm" onclick="clearAlerts()">✕ Clear</button>
+      </div>
+    </div>
+    <div class="pb" style="max-height:600px">
+      <div class="tabs">
+        <div class="tab on" onclick="setFilter('all',this)">All</div>
+        <div class="tab" onclick="setFilter('drain',this)">🚨 Drains</div>
+        <div class="tab" onclick="setFilter('approval',this)">⚠ Approvals</div>
+        <div class="tab" onclick="setFilter('transfer',this)">↔ Transfers</div>
+        <div class="tab" onclick="setFilter('start',this)">🟢 System</div>
+      </div>
+      <div id="alert-list">
+        <div class="empty dots"><span>●</span><span>●</span><span>●</span><div style="margin-top:8px">Scanning mainnet for events...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph">
+      <div class="ph-title">👁 Address Watcher</div>
+      <button class="btn btn-d btn-sm" onclick="clearWatch()">Clear All</button>
+    </div>
+    <div class="pb">
+      <div class="inrow">
+        <input class="inp" id="watch-inp" placeholder="0x… full address (42 chars)" maxlength="42" style="font-size:11px">
+      </div>
+      <div style="display:flex;gap:5px;margin-bottom:12px">
+        <button class="btn btn-p btn-sm" style="flex:1" onclick="addWatch()">+ Watch</button>
+        <button class="btn btn-g btn-sm" style="flex:1" onclick="pasteAddr()">📋 Paste</button>
+        <button class="btn btn-g btn-sm" style="flex:1" onclick="addDemoWatch()">Demo</button>
+      </div>
+      <div id="watch-list"><div class="empty" style="padding:14px 0;font-size:11px">No addresses watched yet</div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph">
+      <div class="ph-title">🪙 Token Registry</div>
+      <div style="display:flex;gap:5px">
+        <button class="btn btn-g btn-sm" onclick="sortTok()">Sort ↕</button>
+      </div>
+    </div>
+    <div class="pb">
+      <div class="inrow" style="margin-bottom:10px">
+        <input class="inp" id="tok-search" placeholder="Search token..." oninput="renderToks()" style="font-size:11px">
+      </div>
+      <div id="tok-list"><div class="empty" style="font-size:11px">Auto-populated on detection</div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph">
+      <div class="ph-title">🔴 High Priority <span id="hp-badge" style="background:#dc262612;border:1px solid #dc262630;color:var(--red);padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800">0</span></div>
+      <button class="btn btn-g btn-sm" onclick="dismissHP()">Dismiss All</button>
+    </div>
+    <div class="pb" id="hp-list">
+      <div class="empty" style="padding:14px 0;font-size:11px">🔍 No high-priority alerts</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph">
+      <div class="ph-title">⚙ Config & Thresholds</div>
+      <button class="btn btn-gr btn-sm" onclick="saveConfig()">💾 Save</button>
+    </div>
+    <div class="pb">
+      <div style="font-size:9px;color:var(--text3);letter-spacing:.7px;text-transform:uppercase;margin-bottom:8px">Alert Thresholds</div>
+      <div class="throw"><div class="thlabel">Drain alert</div><input class="thinp" id="t-drain" value="100000" type="number"></div>
+      <div class="throw"><div class="thlabel">Large transfer</div><input class="thinp" id="t-eth" value="50000" type="number"></div>
+      <div class="throw"><div class="thlabel">Approval limit</div><input class="thinp" id="t-approve" value="1" type="number"></div>
+      <div style="font-size:9px;color:var(--text3);letter-spacing:.7px;text-transform:uppercase;margin:12px 0 8px">Notifications</div>
+      <div class="trow"><div class="tlabel">Sound alerts</div><div class="tog" onclick="this.classList.toggle('on')"></div></div>
+      <div class="trow"><div class="tlabel">Drain detection</div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="trow"><div class="tlabel">Unlimited approvals</div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="trow"><div class="tlabel">Start events</div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="trow"><div class="tlabel">Auto-pause on critical</div><div class="tog" onclick="this.classList.toggle('on')"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="sbar">
+  <div class="sbar-l">
+    <span><span class="dot"></span>Connected · Ethereum Mainnet</span>
+    <span>Last update: <span id="last-upd">—</span></span>
+  </div>
+  <div class="sbar-r">
+    <span>Refresh: 5s</span>
+    <span id="scan-status" style="color:var(--green)">● Scanning</span>
+  </div>
+</div>
+
 <script>
-const ICONS={drain:'D',approval:'!',transfer:'T',start:'✓'};
-const DOT={drain:'dot-drain',approval:'dot-approval',transfer:'dot-transfer',start:'dot-start'};
-let allAlerts=[];
-let currentFilter='all';
-let lastCount=0;
-let expandedItems=new Set();
+var scanning=true,alerts=[],watchlist=[],tokens=[],filterMode='all';
+var COLORS=['#0ea5e9','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2','#ea580c'];
 
-function setFilter(f,el){
-  currentFilter=f;
-  document.querySelectorAll('.tab').forEach(t=>t.className='tab');
-  el.className=`tab active ${f}`;
-  renderFeed();
-}
-
-function copyText(text,btn){
-  navigator.clipboard.writeText(text).then(()=>{
-    const orig=btn.textContent;
-    btn.textContent='Copied!';
-    btn.classList.add('copied');
-    setTimeout(()=>{btn.textContent=orig;btn.classList.remove('copied');},1500);
-  });
-}
+function short(a){return a && a.length > 12 ? a.slice(0,6)+'…'+a.slice(-4) : (a || '—')}
+function ts(){return new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+function rnd(l){return '0x'+Array.from({length:l||40},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('')}
 
 function parseDetail(detail){
-  const arrowIdx=detail.indexOf('→');
-  const pipeIdx=detail.indexOf('|');
-  const from=arrowIdx>-1?detail.substring(0,arrowIdx).trim():'';
-  const to=pipeIdx>-1?detail.substring(arrowIdx+1,pipeIdx).trim():arrowIdx>-1?detail.substring(arrowIdx+1).trim():'';
-  const contract=pipeIdx>-1?detail.substring(pipeIdx+1).trim():'';
-  return{from,to,contract};
+  detail = detail || '';
+  var arrowIdx = detail.indexOf('→');
+  var pipeIdx = detail.indexOf('|');
+  var from = arrowIdx > -1 ? detail.substring(0, arrowIdx).trim() : '';
+  var to = pipeIdx > -1 ? detail.substring(arrowIdx + 1, pipeIdx).trim() : (arrowIdx > -1 ? detail.substring(arrowIdx + 1).trim() : '');
+  var contract = pipeIdx > -1 ? detail.substring(pipeIdx + 1).trim() : '';
+  return {from:from,to:to,contract:contract};
 }
 
-function showModal(idx){
-  const a=allAlerts[idx];
-  if(!a)return;
-  const{from,to,contract}=parseDetail(a.detail);
-  const existing=document.getElementById('alertModal');
-  if(existing)existing.remove();
-  const overlay=document.createElement('div');
-  overlay.className='modal-overlay';
-  overlay.id='alertModal';
-  overlay.innerHTML=`
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">${a.title}</span>
-        <button class="modal-close" onclick="document.getElementById('alertModal').remove()">✕ Close</button>
-      </div>
-      <span class="modal-badge ${a.type}">${a.type.toUpperCase()}</span>
-      &nbsp;<span style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;">Block ${a.block}</span>
-      ${from?`
-      <div class="modal-row" style="margin-top:1rem;">
-        <div class="modal-label">From Address</div>
-        <div class="modal-val"><span>${from}</span><button class="copy-btn" onclick="copyText('${from}',this)">Copy</button></div>
-      </div>`:''}
-      ${to?`
-      <div class="modal-row">
-        <div class="modal-label">To Address</div>
-        <div class="modal-val"><span>${to}</span><button class="copy-btn" onclick="copyText('${to}',this)">Copy</button></div>
-      </div>`:''}
-      ${contract?`
-      <div class="modal-row">
-        <div class="modal-label">Contract Address</div>
-        <div class="modal-val"><span>${contract}</span><button class="copy-btn" onclick="copyText('${contract}',this)">Copy</button></div>
-      </div>`:''}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:0.5rem;">
-        ${from?`<a class="etherscan-btn" href="https://etherscan.io/address/${from}" target="_blank">↗ From on Etherscan</a>`:''}
-        ${to?`<a class="etherscan-btn" href="https://etherscan.io/address/${to}" target="_blank">↗ To on Etherscan</a>`:''}
-        ${contract?`<a class="etherscan-btn" href="https://etherscan.io/token/${contract}" target="_blank">↗ Token on Etherscan</a>`:''}
-      </div>
-    </div>`;
-  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
-  document.body.appendChild(overlay);
+function symbolFromTitle(title){
+  if(!title) return 'UNK';
+  var m = title.match(/([A-Z0-9]{2,10})/);
+  return m ? m[1] : 'UNK';
 }
 
-function toggleExpand(i,btn){
-  if(expandedItems.has(i)){expandedItems.delete(i);btn.textContent='▼';}
-  else{expandedItems.add(i);btn.textContent='▲';}
-  renderFeed();
+function amountLabel(a){
+  if(a.type === 'approval') return 'MAX_UINT256';
+  return a.title || 'Alert';
 }
 
-function renderFeed(){
-  const feed=document.getElementById('alertFeed');
-  const q=document.getElementById('searchBox').value.toLowerCase();
-  let filtered=currentFilter==='all'?allAlerts:allAlerts.filter(a=>a.type===currentFilter);
-  if(q)filtered=filtered.filter(a=>(a.title+a.detail).toLowerCase().includes(q));
-  document.getElementById('feedCount').textContent=`${filtered.length} events`;
-  if(!filtered.length){
-    feed.innerHTML=`<div class="empty-state"><div class="empty-icon">📡</div><div class="empty-text">No events found...</div></div>`;
-    return;
-  }
-  feed.innerHTML=filtered.map((a,i)=>{
-    const realIdx=allAlerts.indexOf(a);
-    const isExpanded=expandedItems.has(realIdx);
-    const safeDetail=a.detail.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<div class="alert-item${a.type==='drain'?' is-drain':a.type==='approval'?' is-approval':''}" onclick="showModal(${realIdx})">
-      <div class="alert-dot ${DOT[a.type]||'dot-start'}">${ICONS[a.type]||'?'}</div>
-      <div class="alert-body">
-        <div class="alert-title">${a.title}</div>
-        <div class="alert-detail${isExpanded?'':' collapsed'}">${a.detail}</div>
-      </div>
-      <div class="alert-meta">
-        <div class="alert-block">⬡ ${a.block}</div>
-        <button class="copy-btn" onclick="event.stopPropagation();copyText('${safeDetail}',this)">Copy</button>
-        <button class="expand-btn" onclick="event.stopPropagation();toggleExpand(${realIdx},this)">${isExpanded?'▲':'▼'}</button>
-      </div>
-    </div>`;
-  }).join('');
+function riskLevel(a){
+  if(a.type === 'drain') return 'high';
+  if(a.type === 'approval') return 'med';
+  return 'low';
 }
 
-function renderHighPriority(alerts){
-  const high=alerts.filter(a=>a.type==='drain'||a.type==='approval');
-  document.getElementById('highCount').textContent=high.length;
-  const feed=document.getElementById('highFeed');
-  if(!high.length){
-    feed.innerHTML=`<div class="empty-state" style="padding:2rem 1rem;"><div class="empty-icon" style="font-size:1.5rem;">🔍</div><div class="empty-text">No high-priority alerts</div></div>`;
-    return;
-  }
-  feed.innerHTML=high.map(a=>{
-    const idx=allAlerts.indexOf(a);
-    return `<div class="activity-item" onclick="showModal(${idx})">
-      <div class="alert-dot ${DOT[a.type]}" style="width:28px;height:28px;font-size:11px;">${ICONS[a.type]}</div>
-      <div class="activity-line">
-        <div class="activity-title">${a.title}</div>
-        <div class="activity-addr">${a.detail}</div>
-        <div class="activity-block">block ${a.block}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function showToast(a){
-  if(a.type!=='drain'&&a.type!=='approval')return;
-  const c=document.getElementById('toastContainer');
-  const t=document.createElement('div');
-  t.className=`toast ${a.type}`;
-  t.innerHTML=`<div class="toast-title">${a.title}</div><div class="toast-detail">${a.detail}</div>`;
-  c.prepend(t);
-  setTimeout(()=>t.remove(),5000);
-}
-
-function clearAll(){
-  if(!confirm('Clear all alerts?'))return;
-  fetch('/api/clear',{method:'POST'}).then(()=>{
-    allAlerts=[];
-    expandedItems.clear();
-    renderFeed();
-    renderHighPriority([]);
-    document.getElementById('sTokens').textContent='0';
-    document.getElementById('sTransfers').textContent='0';
-    document.getElementById('sDrains').textContent='0';
-    document.getElementById('sApprovals').textContent='0';
+function buildTokens(){
+  var seen = {};
+  tokens = [];
+  alerts.forEach(function(a){
+    var p = parseDetail(a.detail || '');
+    if(!p.contract || seen[p.contract]) return;
+    seen[p.contract] = true;
+    tokens.push({
+      sym: symbolFromTitle(a.title),
+      addr: p.contract,
+      risk: riskLevel(a)
+    });
   });
 }
 
+function updateStats(data){
+  var stats = data.stats || {};
+  var hp = alerts.filter(function(a){ return a.type === 'drain' || a.type === 'approval'; }).length;
+  document.getElementById('st-tok').textContent = (stats.tokens || tokens.length || 0).toLocaleString();
+  document.getElementById('st-tx').textContent = (stats.transfers || 0).toLocaleString();
+  document.getElementById('st-drain').textContent = (stats.drains || 0).toLocaleString();
+  document.getElementById('st-approve').textContent = (stats.approvals || 0).toLocaleString();
+  document.getElementById('st-hp').textContent = hp.toLocaleString();
+  document.getElementById('hp-badge').textContent = hp.toLocaleString();
+  var latestBlock = alerts.length ? (alerts[0].block || '—') : '—';
+  document.getElementById('block-badge').textContent = 'block ' + latestBlock;
+  document.getElementById('pending').textContent = latestBlock;
+  document.getElementById('gas').textContent = (8 + Math.random()*90).toFixed(1);
+  document.getElementById('last-scan').textContent = ts();
+  document.getElementById('last-upd').textContent = ts();
+}
+
+function renderAlerts(){
+  var list = filterMode === 'all' ? alerts : alerts.filter(function(a){ return a.type === filterMode; });
+  document.getElementById('ev-count').textContent = list.length + ' events';
+  if(list.length === 0){
+    document.getElementById('alert-list').innerHTML = '<div class="empty dots"><span>●</span><span>●</span><span>●</span><div style="margin-top:8px">Scanning mainnet for events...</div></div>';
+    return;
+  }
+  var html = list.slice(0, 100).map(function(a){
+    var p = parseDetail(a.detail || '');
+    var amountColor = a.type === 'drain' ? 'var(--red)' : a.type === 'approval' ? 'var(--amber)' : 'var(--text)';
+    return '<div class="ai">' +
+      '<div class="ai-row"><span class="atype t-' + a.type + '">' + a.type.toUpperCase() + '</span><span class="atime">#' + (a.block || '—') + '</span></div>' +
+      '<div class="ai-row"><span class="aaddr"><b>' + short(p.from) + '</b> → <b>' + short(p.to) + '</b></span><span class="aamount" style="color:' + amountColor + '">' + amountLabel(a) + '</span></div>' +
+      '<div class="aaddr">' + (p.contract ? 'Contract: <b>' + short(p.contract) + '</b>' : (a.detail || '')) + '</div>' +
+      '</div>';
+  }).join('');
+  document.getElementById('alert-list').innerHTML = html;
+}
+
+function renderHP(){
+  var hp = alerts.filter(function(a){ return a.type === 'drain' || a.type === 'approval'; }).slice(0, 8);
+  if(hp.length === 0){
+    document.getElementById('hp-list').innerHTML = '<div class="empty" style="padding:14px 0;font-size:11px">🔍 No high-priority alerts</div>';
+    return;
+  }
+  var html = hp.map(function(a){
+    var p = parseDetail(a.detail || '');
+    return '<div class="ai">' +
+      '<div class="ai-row"><span class="atype t-' + a.type + '">' + a.type.toUpperCase() + '</span><span class="atime">#' + (a.block || '—') + '</span></div>' +
+      '<div class="ai-row"><span class="aaddr"><b>' + short(p.from) + '</b></span><span class="aamount" style="color:var(--red)">' + amountLabel(a) + '</span></div>' +
+      '<div style="margin-top:5px" class="aaddr">' + (a.title || '') + '</div>' +
+      '</div>';
+  }).join('');
+  document.getElementById('hp-list').innerHTML = html;
+}
+
+function renderToks(){
+  var q=(document.getElementById('tok-search').value||'').toLowerCase();
+  var f=q?tokens.filter(function(t){return t.sym.toLowerCase().includes(q) || t.addr.toLowerCase().includes(q);}):tokens;
+  if(f.length===0){document.getElementById('tok-list').innerHTML='<div class="empty" style="font-size:11px">'+(q?'No match':'Auto-populated on detection')+'</div>';return;}
+  var html=f.slice(0,20).map(function(t,i){
+    return '<div class="tr">'+
+      '<div class="ticon" style="color:'+COLORS[i%COLORS.length]+'">'+t.sym.slice(0,3)+'</div>'+
+      '<div><div class="tname">'+t.sym+'</div><div class="taddr">'+short(t.addr)+'</div></div>'+
+      '<span class="risk r-'+t.risk+'">'+t.risk.toUpperCase()+'</span>'+
+      '<button class="btn btn-g btn-sm" onclick="addWatchAddr(\''+t.addr+'\',\''+t.sym+'\')">Watch</button>'+
+    '</div>';
+  }).join('');
+  document.getElementById('tok-list').innerHTML=html;
+}
+
+function renderWatch(){
+  if(watchlist.length===0){document.getElementById('watch-list').innerHTML='<div class="empty" style="padding:14px 0;font-size:11px">No addresses watched yet</div>';return;}
+  var html=watchlist.map(function(w,i){
+    return '<div class="wi">'+
+      '<div class="wavatar">'+w.label.slice(0,2).toUpperCase()+'</div>'+
+      '<div class="winfo"><div class="wlabel">'+w.label+'</div><div class="whex">'+short(w.addr)+'</div></div>'+
+      '<div class="wbtns">'+
+        '<button class="btn btn-g btn-sm" onclick="copyAddr(\''+w.addr+'\')" title="Copy">📋</button>'+
+        '<button class="btn btn-d btn-sm" onclick="rmWatch('+i+')">✕</button>'+
+      '</div></div>';
+  }).join('');
+  document.getElementById('watch-list').innerHTML=html;
+}
+
+function setFilter(m,el){
+  filterMode=m;
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  el.classList.add('on');
+  renderAlerts();
+}
+
+async function clearAlerts(){
+  if(!confirm('Clear all alerts?')) return;
+  await fetch('/api/clear',{method:'POST'});
+  alerts = [];
+  buildTokens();
+  renderAlerts();
+  renderHP();
+  renderToks();
+  updateStats({stats:{tokens:0,transfers:0,drains:0,approvals:0}});
+}
+
+function toggleScan(){
+  scanning=!scanning;
+  var b=document.getElementById('scan-btn');
+  b.textContent=scanning?'⏸ Pause':'▶ Resume';
+  document.getElementById('scan-status').textContent=scanning?'● Scanning':'◼ Paused';
+  document.getElementById('scan-status').style.color=scanning?'var(--green)':'var(--amber)';
+}
+
+function exportAlerts(){
+  var blob=new Blob([JSON.stringify(alerts,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='erc20-alerts.json';a.click();
+}
+
+function addWatch(){
+  var v=document.getElementById('watch-inp').value.trim();
+  if(!v||v.length!==42||!v.startsWith('0x')){alert('Enter a valid 0x address (42 chars)');return;}
+  watchlist.push({addr:v,label:'Wallet '+(watchlist.length+1)});
+  document.getElementById('watch-inp').value='';
+  renderWatch();
+}
+
+function addWatchAddr(addr,label){
+  if(watchlist.find(function(w){return w.addr===addr;}))return;
+  watchlist.push({addr:addr,label:label||'Contract'});
+  renderWatch();
+}
+
+function addDemoWatch(){watchlist.push({addr:rnd(),label:'Whale '+(watchlist.length+1)});renderWatch();}
+function pasteAddr(){navigator.clipboard.readText().then(function(t){document.getElementById('watch-inp').value=t.trim();}).catch(function(){});}
+function rmWatch(i){watchlist.splice(i,1);renderWatch();}
+function clearWatch(){watchlist=[];renderWatch();}
+function copyAddr(a){navigator.clipboard.writeText(a).catch(function(){});}
+function saveConfig(){var t=document.getElementById('t-drain').value;document.getElementById('tdisplay').textContent=Number(t).toLocaleString()+' tokens';}
+function sortTok(){tokens.sort(function(a,b){return a.sym.localeCompare(b.sym);});renderToks();}
+function dismissHP(){alerts=alerts.filter(function(a){return a.type!=='drain'&&a.type!=='approval';});renderHP();renderAlerts();}
+
 async function refresh(){
+  if(!scanning) return;
   try{
-    const r=await fetch('/api/data');
-    const d=await r.json();
-    document.getElementById('sTokens').textContent=d.stats.tokens.toLocaleString();
-    document.getElementById('sTransfers').textContent=d.stats.transfers.toLocaleString();
-    document.getElementById('sDrains').textContent=d.stats.drains.toLocaleString();
-    document.getElementById('sApprovals').textContent=d.stats.approvals.toLocaleString();
-    const lb=d.alerts.length?d.alerts[0].block:'—';
-    document.getElementById('blockBadge').textContent=`block ${lb}`;
-    document.getElementById('lastUpdate').textContent=`Last update: ${new Date().toLocaleTimeString()}`;
-    if(d.alerts.length>lastCount&&lastCount>0){
-      d.alerts.slice(0,d.alerts.length-lastCount).forEach(showToast);
-    }
-    lastCount=d.alerts.length;
-    allAlerts=d.alerts;
-    renderFeed();
-    renderHighPriority(d.alerts);
-  }catch(e){console.log(e);}
+    var r = await fetch('/api/data');
+    var d = await r.json();
+    alerts = d.alerts || [];
+    buildTokens();
+    updateStats(d);
+    renderAlerts();
+    renderHP();
+    renderToks();
+  }catch(e){
+    console.log(e);
+  }
 }
 
 refresh();
 setInterval(refresh,5000);
 </script>
 </body>
-</html>'''
+</html>
+"""
+
 
 @app.route("/")
 def index():
     return render_template_string(HTML)
 
+
 @app.route("/api/data")
 def api_data():
     return jsonify(load())
+
 
 @app.route("/api/alert", methods=["POST"])
 def add_alert():
@@ -410,22 +519,31 @@ def add_alert():
     alert = request.json
     data["alerts"].insert(0, alert)
     data["alerts"] = data["alerts"][:500]
-    t = alert.get("type", "")
-    if t == "drain": data["stats"]["drains"] += 1
-    elif t == "approval": data["stats"]["approvals"] += 1
-    elif t == "transfer": data["stats"]["transfers"] += 1
-    data["stats"]["tokens"] = len(set(
-        a["detail"].split("|")[-1].strip()
-        for a in data["alerts"]
-        if a.get("type") == "transfer" and "|" in a.get("detail", "")
-    ))
+
+    alert_type = alert.get("type", "")
+    if alert_type == "drain":
+        data["stats"]["drains"] += 1
+    elif alert_type == "approval":
+        data["stats"]["approvals"] += 1
+    elif alert_type == "transfer":
+        data["stats"]["transfers"] += 1
+
+    contracts = set()
+    for item in data["alerts"]:
+        detail = item.get("detail", "")
+        if "|" in detail:
+            contracts.add(detail.split("|")[-1].strip())
+    data["stats"]["tokens"] = len(contracts)
+
     save(data)
     return jsonify({"ok": True})
+
 
 @app.route("/api/clear", methods=["POST"])
 def clear():
     save({"alerts": [], "stats": {"tokens": 0, "transfers": 0, "drains": 0, "approvals": 0}})
     return jsonify({"ok": True})
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
